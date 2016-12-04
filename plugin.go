@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 
+	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2"
 	"code.cloudfoundry.org/cli/plugin"
 )
 
@@ -14,26 +15,17 @@ import (
 type BasicPlugin struct{}
 
 type RoutesResponse struct {
-	NextUrl   string  `json:"next_url"`
-	Resources []Route `json:"resources"`
+	NextUrl   string       `json:"next_url"`
+	Resources []ccv2.Route `json:"resources"`
 }
 
-type Route struct {
-	Metadata map[string]string `json:"metadata"`
-	Entity   RouteEntity       `json:"entity"`
-}
-
-type RouteEntity struct {
-	Host string `json:"host"`
-}
-
-func getRoutes(cliConnection plugin.CliConnection) (routes []Route, err error) {
+func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err error) {
 	// based on the following:
 	// * https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
 	// * https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
-	routes = make([]Route, 0)
-	url := "/v2/routes"
+	routes = make([]ccv2.Route, 0)
+	url := "/v2/routes?results-per-page=100"
 	var bodyLines []string
 
 	for url != "" {
@@ -41,7 +33,6 @@ func getRoutes(cliConnection plugin.CliConnection) (routes []Route, err error) {
 		if err != nil {
 			return
 		}
-
 		body := strings.Join(bodyLines, "\n")
 
 		var data RoutesResponse
@@ -83,9 +74,10 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		fmt.Println(len(routes), "routes found.")
 
 		subdomain := strings.Split(args[1], ".")[0]
-		matches := make([]Route, 0, len(routes))
+		matches := make([]ccv2.Route, 0, len(routes))
 		for _, route := range routes {
-			if route.Entity.Host == subdomain {
+			// TODO handle private domains, which may not have a Host
+			if route.Host == subdomain {
 				fmt.Println("Subdomain match!", subdomain)
 				matches = append(matches, route)
 			}
