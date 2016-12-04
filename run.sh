@@ -3,7 +3,9 @@
 set -e
 set -x
 
-NAME=MyBasicPlugin
+NAME=route-lookup
+SUBCOMMAND=lookup-route
+
 # http://stackoverflow.com/a/1371283/358804
 BIN=${PWD##*/}
 
@@ -15,4 +17,4 @@ if cf plugins | grep -q "$NAME"; then
 fi
 cf install-plugin -f "$BIN"
 
-cf basic-plugin-command "$@"
+cf "$SUBCOMMAND" "$@"

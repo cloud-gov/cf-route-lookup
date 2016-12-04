@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 )
 
-var CMD = "basic-plugin-command"
+var CMD = "lookup-route"
 
 type BasicPlugin struct{}
 
@@ -174,7 +174,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		return
 	}
 
-	fmt.Println("Running the " + CMD)
+	fmt.Println("Running " + CMD)
 
 	if len(args) != 2 {
 		log.Fatal("Please specify the domain to look up.")
@@ -193,7 +193,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name: "MyBasicPlugin",
+		Name: "route-lookup",
 		Version: plugin.VersionType{
 			Major: 1,
 			Minor: 0,
@@ -207,7 +207,7 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 		Commands: []plugin.Command{
 			{
 				Name:     CMD,
-				HelpText: "Basic plugin command's help text",
+				HelpText: "Look up the mapping of a provided route",
 				UsageDetails: plugin.Usage{
 					Usage: CMD + "\n   cf " + CMD,
 				},
