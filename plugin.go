@@ -25,7 +25,7 @@ type routesResponse struct {
 	Resources []ccv2.Route `json:"resources"`
 }
 
-// possibleDomains returns all domain levels, down to the second-level domain (SLD)
+// possibleDomains returns all domain levels, down to the second-level domain (SLD), in order.
 func getPossibleDomains(hostname string) []string {
 	parts := strings.Split(hostname, ".")
 	numCombinations := len(parts) - 1
@@ -84,6 +84,29 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 	return
 }
 
+func getDomain(cliConnection plugin.CliConnection, hostname string) (matchingDomain ccv2.Domain, found bool, err error) {
+	possibleDomains := getPossibleDomains(hostname)
+	fmt.Printf("%#v\n", possibleDomains)
+
+	domains, err := getDomains(cliConnection, possibleDomains)
+	if err != nil {
+		return
+	}
+	fmt.Println("Matching domains:", domains)
+
+	for _, possibleDomain := range possibleDomains {
+		for _, domain := range domains {
+			if domain.Name == possibleDomain {
+				found = true
+				matchingDomain = domain
+				return
+			}
+		}
+	}
+
+	return
+}
+
 func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
@@ -131,19 +154,16 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		// TODO check for argument length
 
 		hostname := args[1]
-		possibleDomains := getPossibleDomains(hostname)
-		fmt.Printf("%#v\n", possibleDomains)
-
-		domains, err := getDomains(cliConnection, possibleDomains)
+		domain, domainFound, err := getDomain(cliConnection, hostname)
 		if err != nil {
 			log.Fatal("Error retrieving the domains.")
 		}
-		fmt.Println(domains)
-		for _, domain := range domains {
-			if domain.Name == hostname {
-				fmt.Println("It's a domain! GUID:", domain.GUID)
-				return
-			}
+		if !domainFound {
+			log.Fatal("Could not find matching domain.")
+		}
+		if domain.Name == hostname {
+			fmt.Println("It's a domain! GUID:", domain.GUID)
+			return
 		}
 
 		routes, err := getRoutes(cliConnection)
