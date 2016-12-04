@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -135,6 +136,37 @@ func getRoutes(cliConnection plugin.CliConnection, domain ccv2.Domain) (routes [
 	return
 }
 
+func getRoute(cliConnection plugin.CliConnection, hostname string) (matchingRoute ccv2.Route, found bool, err error) {
+	domain, domainFound, err := getDomain(cliConnection, hostname)
+	if err != nil {
+		return
+	}
+	if !domainFound {
+		err = errors.New("Could not find matching domain.")
+		return
+	}
+
+	routes, err := getRoutes(cliConnection, domain)
+	if err != nil {
+		return
+	}
+	fmt.Println(len(routes), "routes found.")
+
+	for _, route := range routes {
+		routeHostname := domain.Name
+		if route.Host != "" {
+			routeHostname = route.Host + "." + routeHostname
+		}
+		if routeHostname == hostname {
+			found = true
+			matchingRoute = route
+			return
+		}
+	}
+
+	return
+}
+
 func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "basic-plugin-command" {
 		fmt.Println("Running the basic-plugin-command")
@@ -142,34 +174,14 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		// TODO check for argument length
 
 		hostname := args[1]
-		domain, domainFound, err := getDomain(cliConnection, hostname)
+		route, routeFound, err := getRoute(cliConnection, hostname)
 		if err != nil {
-			log.Fatal("Error retrieving the domains.")
+			log.Fatal("Error finding route. ", err)
 		}
-		if !domainFound {
-			log.Fatal("Could not find matching domain.")
+		if !routeFound {
+			log.Fatal("Route not found.")
 		}
-		if domain.Name == hostname {
-			fmt.Println("It's a domain! GUID:", domain.GUID)
-		}
-
-		routes, err := getRoutes(cliConnection, domain)
-		if err != nil {
-			log.Fatal("Error retrieving the routes.")
-		}
-		fmt.Println(len(routes), "routes found.")
-
-		subdomain := strings.Split(hostname, ".")[0]
-		matches := make([]ccv2.Route, 0, len(routes))
-		for _, route := range routes {
-			if route.Host == subdomain {
-				fmt.Println("Subdomain match!", subdomain)
-				matches = append(matches, route)
-			}
-		}
-		if len(matches) == 0 {
-			fmt.Println("Domain not found.")
-		}
+		fmt.Println("Route found! GUID:", route.GUID)
 	}
 }
 
