@@ -171,7 +171,9 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "basic-plugin-command" {
 		fmt.Println("Running the basic-plugin-command")
 
-		// TODO check for argument length
+		if len(args) != 2 {
+			log.Fatal("Please specify the domain to look up.")
+		}
 
 		hostname := args[1]
 		route, routeFound, err := getRoute(cliConnection, hostname)
