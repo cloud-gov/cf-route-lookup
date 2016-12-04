@@ -19,21 +19,29 @@ type RoutesResponse struct {
 	Resources []ccv2.Route `json:"resources"`
 }
 
+func apiCall(cliConnection plugin.CliConnection, path string) (body string, err error) {
+	// based on https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
+	bodyLines, err := cliConnection.CliCommandWithoutTerminalOutput("curl", path)
+	if err != nil {
+		return
+	}
+	body = strings.Join(bodyLines, "\n")
+	return
+}
+
 func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err error) {
-	// based on the following:
-	// * https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
-	// * https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
+	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
 	routes = make([]ccv2.Route, 0)
 	url := "/v2/routes?results-per-page=100"
-	var bodyLines []string
 
+	// paginate
 	for url != "" {
-		bodyLines, err = cliConnection.CliCommandWithoutTerminalOutput("curl", url)
+		var body string
+		body, err = apiCall(cliConnection, url)
 		if err != nil {
 			return
 		}
-		body := strings.Join(bodyLines, "\n")
 
 		var data RoutesResponse
 		err = json.Unmarshal([]byte(body), &data)
