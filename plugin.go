@@ -57,13 +57,13 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 	queryString := params.Encode()
 
 	for _, endpoint := range endpoints {
-		url := endpoint + "?" + queryString
-		fmt.Println(url)
+		uri := endpoint + "?" + queryString
+		fmt.Println(uri)
 
 		// paginate
-		for url != "" {
+		for uri != "" {
 			var body string
-			body, err = apiCall(cliConnection, url)
+			body, err = apiCall(cliConnection, uri)
 			if err != nil {
 				return
 			}
@@ -75,7 +75,7 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 			}
 
 			domains = append(domains, data.Resources...)
-			url = data.NextUrl
+			uri = data.NextUrl
 		}
 	}
 
@@ -109,12 +109,12 @@ func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err err
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
 	routes = make([]ccv2.Route, 0)
-	url := "/v2/routes?results-per-page=100"
+	uri := "/v2/routes?results-per-page=100"
 
 	// paginate
-	for url != "" {
+	for uri != "" {
 		var body string
-		body, err = apiCall(cliConnection, url)
+		body, err = apiCall(cliConnection, uri)
 		if err != nil {
 			return
 		}
@@ -126,7 +126,7 @@ func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err err
 		}
 
 		routes = append(routes, data.Resources...)
-		url = data.NextUrl
+		uri = data.NextUrl
 	}
 
 	return
@@ -160,7 +160,6 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		subdomain := strings.Split(hostname, ".")[0]
 		matches := make([]ccv2.Route, 0, len(routes))
 		for _, route := range routes {
-			// TODO handle private domains, which may not have a Host
 			if route.Host == subdomain {
 				fmt.Println("Subdomain match!", subdomain)
 				matches = append(matches, route)
