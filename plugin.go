@@ -46,33 +46,39 @@ func apiCall(cliConnection plugin.CliConnection, path string) (body string, err 
 	return
 }
 
-func getPrivateDomains(cliConnection plugin.CliConnection, names []string) (domains []ccv2.Domain, err error) {
+func getDomains(cliConnection plugin.CliConnection, names []string) (domains []ccv2.Domain, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
 	domains = make([]ccv2.Domain, 0)
 
-	values := url.Values{}
-	values.Set("q", "name IN "+strings.Join(names, ","))
-	values.Set("results-per-page", "100")
-	url := "/v2/private_domains?" + values.Encode()
-	fmt.Println(url)
+	endpoints := [...]string{"/v2/private_domains", "/v2/shared_domains"}
 
-	// paginate
-	for url != "" {
-		var body string
-		body, err = apiCall(cliConnection, url)
-		if err != nil {
-			return
+	params := url.Values{}
+	params.Set("q", "name IN "+strings.Join(names, ","))
+	params.Set("results-per-page", "100")
+	queryString := params.Encode()
+
+	for _, endpoint := range endpoints {
+		url := endpoint + "?" + queryString
+		fmt.Println(url)
+
+		// paginate
+		for url != "" {
+			var body string
+			body, err = apiCall(cliConnection, url)
+			if err != nil {
+				return
+			}
+
+			var data domainsResponse
+			err = json.Unmarshal([]byte(body), &data)
+			if err != nil {
+				return
+			}
+
+			domains = append(domains, data.Resources...)
+			url = data.NextUrl
 		}
-
-		var data domainsResponse
-		err = json.Unmarshal([]byte(body), &data)
-		if err != nil {
-			return
-		}
-
-		domains = append(domains, data.Resources...)
-		url = data.NextUrl
 	}
 
 	return
@@ -127,9 +133,9 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		possibleDomains := getPossibleDomains(args[1])
 		fmt.Printf("%#v\n", possibleDomains)
 
-		domains, err := getPrivateDomains(cliConnection, possibleDomains)
+		domains, err := getDomains(cliConnection, possibleDomains)
 		if err != nil {
-			log.Fatal("Error retrieving the private domains.")
+			log.Fatal("Error retrieving the domains.")
 		}
 		fmt.Println(domains)
 
