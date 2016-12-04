@@ -12,6 +12,8 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 )
 
+var CMD = "basic-plugin-command"
+
 type BasicPlugin struct{}
 
 type domainsResponse struct {
@@ -168,23 +170,25 @@ func getRoute(cliConnection plugin.CliConnection, hostname string) (matchingRout
 }
 
 func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	if args[0] == "basic-plugin-command" {
-		fmt.Println("Running the basic-plugin-command")
-
-		if len(args) != 2 {
-			log.Fatal("Please specify the domain to look up.")
-		}
-
-		hostname := args[1]
-		route, routeFound, err := getRoute(cliConnection, hostname)
-		if err != nil {
-			log.Fatal("Error finding route. ", err)
-		}
-		if !routeFound {
-			log.Fatal("Route not found.")
-		}
-		fmt.Println("Route found! GUID:", route.GUID)
+	if args[0] != CMD {
+		return
 	}
+
+	fmt.Println("Running the " + CMD)
+
+	if len(args) != 2 {
+		log.Fatal("Please specify the domain to look up.")
+	}
+
+	hostname := args[1]
+	route, routeFound, err := getRoute(cliConnection, hostname)
+	if err != nil {
+		log.Fatal("Error finding route. ", err)
+	}
+	if !routeFound {
+		log.Fatal("Route not found.")
+	}
+	fmt.Println("Route found! GUID:", route.GUID)
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
@@ -202,10 +206,10 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 		},
 		Commands: []plugin.Command{
 			{
-				Name:     "basic-plugin-command",
+				Name:     CMD,
 				HelpText: "Basic plugin command's help text",
 				UsageDetails: plugin.Usage{
-					Usage: "basic-plugin-command\n   cf basic-plugin-command",
+					Usage: CMD + "\n   cf " + CMD,
 				},
 			},
 		},
