@@ -169,3 +169,19 @@ func getMappings(cliConnection plugin.CliConnection, route ccv2.Route) (mappings
 
 	return
 }
+
+func getApp(cliConnection plugin.CliConnection, guid string) (app App, err error) {
+	uri := "/v2/apps/" + guid + "/summary"
+
+	var body string
+	body, err = apiCall(cliConnection, uri)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal([]byte(body), &app)
+	if err != nil {
+		return
+	}
+
+	return
+}

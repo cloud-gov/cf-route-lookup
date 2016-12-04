@@ -49,6 +49,16 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("Error finding mappings. ", err)
 	}
 	fmt.Println("Mappings:", mappings)
+
+	apps := make([]App, len(mappings))
+	for i, mapping := range mappings {
+		app, err := mapping.GetApp(cliConnection)
+		if err != nil {
+			log.Fatal("Error finding app. ", err)
+		}
+		fmt.Println("App:", app)
+		apps[i] = app
+	}
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
