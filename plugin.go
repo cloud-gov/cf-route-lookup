@@ -35,30 +35,11 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 
 	hostname := args[1]
-	route, routeFound, err := getRoute(cliConnection, hostname)
+	apps, err := getApps(cliConnection, hostname)
 	if err != nil {
-		log.Fatal("Error finding route. ", err)
+		log.Fatal("Error retrieving apps: ", err)
 	}
-	if !routeFound {
-		log.Fatal("Route not found.")
-	}
-	fmt.Println("Route found! GUID:", route.GUID)
-
-	mappings, err := getMappings(cliConnection, route)
-	if err != nil {
-		log.Fatal("Error finding mappings. ", err)
-	}
-	fmt.Println("Mappings:", mappings)
-
-	apps := make([]App, len(mappings))
-	for i, mapping := range mappings {
-		app, err := mapping.GetApp(cliConnection)
-		if err != nil {
-			log.Fatal("Error finding app. ", err)
-		}
-		fmt.Println("App:", app)
-		apps[i] = app
-	}
+	fmt.Println("Apps:", apps)
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {

@@ -185,3 +185,33 @@ func getApp(cliConnection plugin.CliConnection, guid string) (app App, err error
 
 	return
 }
+
+func getApps(cliConnection plugin.CliConnection, hostname string) (apps []App, err error) {
+
+	route, routeFound, err := getRoute(cliConnection, hostname)
+	if err != nil {
+		return
+	}
+	if !routeFound {
+		err = errors.New("Route not found.")
+		return
+	}
+	fmt.Println("Route found! GUID:", route.GUID)
+
+	mappings, err := getMappings(cliConnection, route)
+	if err != nil {
+		return
+	}
+
+	apps = make([]App, len(mappings))
+	for i, mapping := range mappings {
+		var app App
+		app, err = mapping.GetApp(cliConnection)
+		if err != nil {
+			return
+		}
+		apps[i] = app
+	}
+
+	return
+}
