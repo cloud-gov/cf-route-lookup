@@ -19,6 +19,17 @@ type RoutesResponse struct {
 	Resources []ccv2.Route `json:"resources"`
 }
 
+// possibleDomains returns all domain levels, down to the second-level domain (SLD)
+func getPossibleDomains(hostname string) []string {
+	parts := strings.Split(hostname, ".")
+	numCombinations := len(parts) - 1
+	possibleDomains := make([]string, numCombinations)
+	for i := 0; i < numCombinations; i++ {
+		possibleDomains[i] = strings.Join(parts[i:], ".")
+	}
+	return possibleDomains
+}
+
 func apiCall(cliConnection plugin.CliConnection, path string) (body string, err error) {
 	// based on https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
 	bodyLines, err := cliConnection.CliCommandWithoutTerminalOutput("curl", path)
@@ -74,6 +85,9 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		fmt.Println("Running the basic-plugin-command")
 
 		// TODO check for argument length
+
+		possibleDomains := getPossibleDomains(args[1])
+		fmt.Printf("%#v\n", possibleDomains)
 
 		routes, err := getRoutes(cliConnection)
 		if err != nil {
