@@ -58,7 +58,6 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 
 	for _, endpoint := range endpoints {
 		uri := endpoint + "?" + queryString
-		fmt.Println(uri)
 
 		// paginate
 		for uri != "" {
@@ -84,7 +83,6 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 
 func getDomain(cliConnection plugin.CliConnection, hostname string) (matchingDomain ccv2.Domain, found bool, err error) {
 	possibleDomains := getPossibleDomains(hostname)
-	fmt.Printf("%#v\n", possibleDomains)
 
 	domains, err := getDomains(cliConnection, possibleDomains)
 	if err != nil {
@@ -105,11 +103,16 @@ func getDomain(cliConnection plugin.CliConnection, hostname string) (matchingDom
 	return
 }
 
-func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err error) {
+func getRoutes(cliConnection plugin.CliConnection, domain ccv2.Domain) (routes []ccv2.Route, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
 	routes = make([]ccv2.Route, 0)
-	uri := "/v2/routes?results-per-page=100"
+
+	params := url.Values{}
+	// TODO also filter by host
+	params.Set("q", "domain_guid:"+domain.GUID)
+	params.Set("results-per-page", "100")
+	uri := "/v2/routes?" + params.Encode()
 
 	// paginate
 	for uri != "" {
@@ -148,10 +151,9 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		}
 		if domain.Name == hostname {
 			fmt.Println("It's a domain! GUID:", domain.GUID)
-			return
 		}
 
-		routes, err := getRoutes(cliConnection)
+		routes, err := getRoutes(cliConnection, domain)
 		if err != nil {
 			log.Fatal("Error retrieving the routes.")
 		}
