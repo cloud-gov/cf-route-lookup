@@ -16,14 +16,26 @@ var CMD = "lookup-route"
 
 type BasicPlugin struct{}
 
-type domainsResponse struct {
+type DomainsResponse struct {
 	NextUrl   string        `json:"next_url"`
 	Resources []ccv2.Domain `json:"resources"`
 }
 
-type routesResponse struct {
+type RoutesResponse struct {
 	NextUrl   string       `json:"next_url"`
 	Resources []ccv2.Route `json:"resources"`
+}
+
+type Mapping struct {
+	Entity struct {
+		AppGUID string `json:"app_guid"`
+		AppURL  string `json:"app_url"`
+	} `json:"entity"`
+}
+
+type MappingsResponse struct {
+	NextUrl   string    `json:"next_url"`
+	Resources []Mapping `json:"resources"`
 }
 
 // possibleDomains returns all domain levels, down to the second-level domain (SLD), in order.
@@ -70,7 +82,7 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 				return
 			}
 
-			var data domainsResponse
+			var data DomainsResponse
 			err = json.Unmarshal([]byte(body), &data)
 			if err != nil {
 				return
@@ -125,7 +137,7 @@ func getRoutes(cliConnection plugin.CliConnection, domain ccv2.Domain) (routes [
 			return
 		}
 
-		var data routesResponse
+		var data RoutesResponse
 		err = json.Unmarshal([]byte(body), &data)
 		if err != nil {
 			return
@@ -169,6 +181,33 @@ func getRoute(cliConnection plugin.CliConnection, hostname string) (matchingRout
 	return
 }
 
+func getMappings(cliConnection plugin.CliConnection, route ccv2.Route) (mappings []Mapping, err error) {
+	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
+
+	mappings = make([]Mapping, 0)
+	uri := "/v2/routes/" + route.GUID + "/route_mappings"
+	fmt.Println(uri)
+
+	// paginate
+	for uri != "" {
+		var body string
+		body, err = apiCall(cliConnection, uri)
+		if err != nil {
+			return
+		}
+		var data MappingsResponse
+		err = json.Unmarshal([]byte(body), &data)
+		if err != nil {
+			return
+		}
+
+		mappings = append(mappings, data.Resources...)
+		uri = data.NextUrl
+	}
+
+	return
+}
+
 func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] != CMD {
 		return
@@ -189,6 +228,12 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("Route not found.")
 	}
 	fmt.Println("Route found! GUID:", route.GUID)
+
+	mappings, err := getMappings(cliConnection, route)
+	if err != nil {
+		log.Fatal("Error finding mappings. ", err)
+	}
+	fmt.Println("Mappings:", mappings)
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
