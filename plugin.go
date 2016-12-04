@@ -16,28 +16,6 @@ var CMD = "lookup-route"
 
 type BasicPlugin struct{}
 
-type DomainsResponse struct {
-	NextUrl   string        `json:"next_url"`
-	Resources []ccv2.Domain `json:"resources"`
-}
-
-type RoutesResponse struct {
-	NextUrl   string       `json:"next_url"`
-	Resources []ccv2.Route `json:"resources"`
-}
-
-type Mapping struct {
-	Entity struct {
-		AppGUID string `json:"app_guid"`
-		AppURL  string `json:"app_url"`
-	} `json:"entity"`
-}
-
-type MappingsResponse struct {
-	NextUrl   string    `json:"next_url"`
-	Resources []Mapping `json:"resources"`
-}
-
 // possibleDomains returns all domain levels, down to the second-level domain (SLD), in order.
 func getPossibleDomains(hostname string) []string {
 	parts := strings.Split(hostname, ".")
