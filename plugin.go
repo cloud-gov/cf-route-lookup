@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
 )
@@ -9,6 +12,36 @@ import (
 // BasicPlugin is the struct implementing the interface defined by the core CLI. It can
 // be found at  "code.cloudfoundry.org/cli/plugin/plugin.go"
 type BasicPlugin struct{}
+
+type RoutesResponse struct {
+	Resources []Route `json:"resources"`
+}
+
+type Route struct {
+	Metadata map[string]interface{} `json:"metadata"`
+	Entity   map[string]interface{} `json:"entity"`
+}
+
+func getRoutes(cliConnection plugin.CliConnection) (routes []Route, err error) {
+	// based on https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
+	// TODO paginate
+
+	bodyLines, err := cliConnection.CliCommandWithoutTerminalOutput("curl", "/v2/routes")
+	if err != nil {
+		return
+	}
+
+	body := strings.Join(bodyLines, "\n")
+
+	var data RoutesResponse
+	err = json.Unmarshal([]byte(body), &data)
+	if err != nil {
+		return
+	}
+
+	routes = data.Resources
+	return
+}
 
 // Run must be implemented by any plugin because it is part of the
 // plugin interface defined by the core CLI.
@@ -26,6 +59,15 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	// Ensure that we called the command basic-plugin-command
 	if args[0] == "basic-plugin-command" {
 		fmt.Println("Running the basic-plugin-command")
+
+		// TODO check for argument length
+
+		routes, err := getRoutes(cliConnection)
+		if err != nil {
+			log.Fatal("Error retrieving the routes.")
+		}
+
+		fmt.Println(len(routes))
 	}
 }
 
