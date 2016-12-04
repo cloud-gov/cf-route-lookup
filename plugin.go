@@ -130,7 +130,8 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 		// TODO check for argument length
 
-		possibleDomains := getPossibleDomains(args[1])
+		hostname := args[1]
+		possibleDomains := getPossibleDomains(hostname)
 		fmt.Printf("%#v\n", possibleDomains)
 
 		domains, err := getDomains(cliConnection, possibleDomains)
@@ -138,6 +139,12 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 			log.Fatal("Error retrieving the domains.")
 		}
 		fmt.Println(domains)
+		for _, domain := range domains {
+			if domain.Name == hostname {
+				fmt.Println("It's a domain! GUID:", domain.GUID)
+				return
+			}
+		}
 
 		routes, err := getRoutes(cliConnection)
 		if err != nil {
@@ -145,7 +152,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		}
 		fmt.Println(len(routes), "routes found.")
 
-		subdomain := strings.Split(args[1], ".")[0]
+		subdomain := strings.Split(hostname, ".")[0]
 		matches := make([]ccv2.Route, 0, len(routes))
 		for _, route := range routes {
 			// TODO handle private domains, which may not have a Host
