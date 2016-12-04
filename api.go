@@ -143,51 +143,7 @@ func getRoute(cliConnection plugin.CliConnection, hostname string) (matchingRout
 	return
 }
 
-func getMappings(cliConnection plugin.CliConnection, route ccv2.Route) (mappings []Mapping, err error) {
-	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
-
-	mappings = make([]Mapping, 0)
-	uri := "/v2/routes/" + route.GUID + "/route_mappings"
-	fmt.Println(uri)
-
-	// paginate
-	for uri != "" {
-		var body string
-		body, err = apiCall(cliConnection, uri)
-		if err != nil {
-			return
-		}
-		var data MappingsResponse
-		err = json.Unmarshal([]byte(body), &data)
-		if err != nil {
-			return
-		}
-
-		mappings = append(mappings, data.Resources...)
-		uri = data.NextUrl
-	}
-
-	return
-}
-
-func getApp(cliConnection plugin.CliConnection, guid string) (app App, err error) {
-	uri := "/v2/apps/" + guid + "/summary"
-
-	var body string
-	body, err = apiCall(cliConnection, uri)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal([]byte(body), &app)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
 func getApps(cliConnection plugin.CliConnection, hostname string) (apps []App, err error) {
-
 	route, routeFound, err := getRoute(cliConnection, hostname)
 	if err != nil {
 		return
@@ -198,19 +154,25 @@ func getApps(cliConnection plugin.CliConnection, hostname string) (apps []App, e
 	}
 	fmt.Println("Route found! GUID:", route.GUID)
 
-	mappings, err := getMappings(cliConnection, route)
-	if err != nil {
-		return
-	}
+	apps = make([]App, 0)
+	uri := "/v2/routes/" + route.GUID + "/apps"
 
-	apps = make([]App, len(mappings))
-	for i, mapping := range mappings {
-		var app App
-		app, err = mapping.GetApp(cliConnection)
+	// paginate
+	for uri != "" {
+		var body string
+		body, err = apiCall(cliConnection, uri)
 		if err != nil {
 			return
 		}
-		apps[i] = app
+
+		var data AppsResponse
+		err = json.Unmarshal([]byte(body), &data)
+		if err != nil {
+			return
+		}
+
+		apps = append(apps, data.Resources...)
+		uri = data.NextUrl
 	}
 
 	return
