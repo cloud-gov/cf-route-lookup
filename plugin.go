@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2"
@@ -14,7 +15,12 @@ import (
 // be found at  "code.cloudfoundry.org/cli/plugin/plugin.go"
 type BasicPlugin struct{}
 
-type RoutesResponse struct {
+type domainsResponse struct {
+	NextUrl   string        `json:"next_url"`
+	Resources []ccv2.Domain `json:"resources"`
+}
+
+type routesResponse struct {
 	NextUrl   string       `json:"next_url"`
 	Resources []ccv2.Route `json:"resources"`
 }
@@ -40,6 +46,38 @@ func apiCall(cliConnection plugin.CliConnection, path string) (body string, err 
 	return
 }
 
+func getPrivateDomains(cliConnection plugin.CliConnection, names []string) (domains []ccv2.Domain, err error) {
+	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
+
+	domains = make([]ccv2.Domain, 0)
+
+	values := url.Values{}
+	values.Set("q", "name IN "+strings.Join(names, ","))
+	values.Set("results-per-page", "100")
+	url := "/v2/private_domains?" + values.Encode()
+	fmt.Println(url)
+
+	// paginate
+	for url != "" {
+		var body string
+		body, err = apiCall(cliConnection, url)
+		if err != nil {
+			return
+		}
+
+		var data domainsResponse
+		err = json.Unmarshal([]byte(body), &data)
+		if err != nil {
+			return
+		}
+
+		domains = append(domains, data.Resources...)
+		url = data.NextUrl
+	}
+
+	return
+}
+
 func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
@@ -54,7 +92,7 @@ func getRoutes(cliConnection plugin.CliConnection) (routes []ccv2.Route, err err
 			return
 		}
 
-		var data RoutesResponse
+		var data routesResponse
 		err = json.Unmarshal([]byte(body), &data)
 		if err != nil {
 			return
@@ -88,6 +126,12 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 		possibleDomains := getPossibleDomains(args[1])
 		fmt.Printf("%#v\n", possibleDomains)
+
+		domains, err := getPrivateDomains(cliConnection, possibleDomains)
+		if err != nil {
+			log.Fatal("Error retrieving the private domains.")
+		}
+		fmt.Println(domains)
 
 		routes, err := getRoutes(cliConnection)
 		if err != nil {
