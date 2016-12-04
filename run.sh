@@ -15,4 +15,4 @@ if cf plugins | grep -q "$NAME"; then
 fi
 cf install-plugin -f "$BIN"
 
-cf basic-plugin-command
+cf basic-plugin-command "$@"

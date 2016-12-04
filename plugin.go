@@ -18,8 +18,12 @@ type RoutesResponse struct {
 }
 
 type Route struct {
-	Metadata map[string]interface{} `json:"metadata"`
-	Entity   map[string]interface{} `json:"entity"`
+	Metadata map[string]string `json:"metadata"`
+	Entity   RouteEntity       `json:"entity"`
+}
+
+type RouteEntity struct {
+	Host string `json:"host"`
 }
 
 func getRoutes(cliConnection plugin.CliConnection) (routes []Route, err error) {
@@ -67,7 +71,17 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 			log.Fatal("Error retrieving the routes.")
 		}
 
-		fmt.Println(len(routes))
+		subdomain := strings.Split(args[1], ".")[0]
+		matches := make([]Route, 0, len(routes))
+		for _, route := range routes {
+			if route.Entity.Host == subdomain {
+				fmt.Println("Subdomain match!", subdomain)
+				matches = append(matches, route)
+			}
+		}
+		if len(matches) == 0 {
+			fmt.Println("Domain not found.")
+		}
 	}
 }
 
