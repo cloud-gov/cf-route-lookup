@@ -39,7 +39,14 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if err != nil {
 		log.Fatal("Error retrieving apps: ", err)
 	}
-	fmt.Println("Apps:", apps)
+
+	for _, app := range apps {
+		space, err := app.GetSpace(cliConnection)
+		if err != nil {
+			log.Fatal("Error retrieving space: ", err)
+		}
+		fmt.Println(space.Entity.Name + "/" + app.Entity.Name)
+	}
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
