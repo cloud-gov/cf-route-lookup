@@ -38,6 +38,12 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		log.Fatal("Error retrieving apps: ", err)
 	}
 
+	if len(apps) == 0 {
+		fmt.Println("Not bound to any applications.")
+		return
+	}
+	fmt.Println("Bound to:")
+
 	for _, app := range apps {
 		space, err := app.GetSpace(cliConnection)
 		if err != nil {
