@@ -21,6 +21,10 @@ func apiCall(cliConnection plugin.CliConnection, path string) (body string, err 
 	return
 }
 
+func inQuery(filter string, values []string) string {
+	return filter + " IN " + strings.Join(values, ",")
+}
+
 func getDomains(cliConnection plugin.CliConnection, names []string) (domains []ccv2.Domain, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 
@@ -29,7 +33,7 @@ func getDomains(cliConnection plugin.CliConnection, names []string) (domains []c
 	endpoints := [...]string{"/v2/private_domains", "/v2/shared_domains"}
 
 	params := url.Values{}
-	params.Set("q", "name IN "+strings.Join(names, ","))
+	params.Set("q", inQuery("name", names))
 	params.Set("results-per-page", "100")
 	queryString := params.Encode()
 
