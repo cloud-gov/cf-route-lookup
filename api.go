@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -69,7 +68,6 @@ func getDomain(cliConnection plugin.CliConnection, hostname string) (matchingDom
 	if err != nil {
 		return
 	}
-	fmt.Println("Matching domains:", domains)
 
 	for _, possibleDomain := range possibleDomains {
 		for _, domain := range domains {
@@ -130,7 +128,6 @@ func getRoute(cliConnection plugin.CliConnection, hostname string) (matchingRout
 	if err != nil {
 		return
 	}
-	fmt.Println(len(routes), "routes found.")
 
 	for _, route := range routes {
 		routeHostname := domain.Name
@@ -156,7 +153,6 @@ func getApps(cliConnection plugin.CliConnection, hostname string) (apps []App, e
 		err = errors.New("Route not found.")
 		return
 	}
-	fmt.Println("Route found! GUID:", route.GUID)
 
 	apps = make([]App, 0)
 	uri := "/v2/routes/" + route.GUID + "/apps"

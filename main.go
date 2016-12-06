@@ -28,8 +28,6 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		return
 	}
 
-	fmt.Println("Running " + CMD)
-
 	if len(args) != 2 {
 		log.Fatal("Please specify the domain to look up.")
 	}
