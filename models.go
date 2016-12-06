@@ -17,12 +17,28 @@ type RoutesResponse struct {
 	Resources []ccv2.Route `json:"resources"`
 }
 
+type Org struct {
+	Entity struct {
+		Name string `json:"name"`
+	} `json:"entity"`
+}
+
 type Space struct {
 	Entity struct {
 		Name    string `json:"name"`
 		OrgGUID string `json:"organization_guid"`
 		OrgURL  string `json:"organization_url"`
 	} `json:"entity"`
+}
+
+func (s Space) GetOrg(cliConnection plugin.CliConnection) (org Org, err error) {
+	body, err := apiCall(cliConnection, s.Entity.OrgURL)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal([]byte(body), &org)
+	return
 }
 
 type App struct {
@@ -40,10 +56,6 @@ func (a App) GetSpace(cliConnection plugin.CliConnection) (space Space, err erro
 	}
 
 	err = json.Unmarshal([]byte(body), &space)
-	if err != nil {
-		return
-	}
-
 	return
 }
 

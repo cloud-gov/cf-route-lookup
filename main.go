@@ -45,7 +45,11 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		if err != nil {
 			log.Fatal("Error retrieving space: ", err)
 		}
-		fmt.Println(space.Entity.Name + "/" + app.Entity.Name)
+		org, err := space.GetOrg(cliConnection)
+		if err != nil {
+			log.Fatal("Error retrieving org: ", err)
+		}
+		fmt.Println(org.Entity.Name + "/" + space.Entity.Name + "/" + app.Entity.Name)
 	}
 }
 
