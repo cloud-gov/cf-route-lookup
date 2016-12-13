@@ -75,7 +75,7 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 				Name:     CMD,
 				HelpText: "Look up the mapping of a provided route",
 				UsageDetails: plugin.Usage{
-					Usage: CMD + "\n   cf " + CMD,
+					Usage: "\n   cf " + CMD + " <some.domain.com>",
 				},
 			},
 		},
