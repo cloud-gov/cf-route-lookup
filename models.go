@@ -59,6 +59,20 @@ func (a App) GetSpace(cliConnection plugin.CliConnection) (space Space, err erro
 	return
 }
 
+func (a App) Target(cliConnection plugin.CliConnection) ([]string, error) {
+	space, err := a.GetSpace(cliConnection)
+	if err != nil {
+		return nil, err
+	}
+
+	org, err := space.GetOrg(cliConnection)
+	if err != nil {
+		return nil, err
+	}
+
+	return cliConnection.CliCommandWithoutTerminalOutput("target", "-o", org.Entity.Name, "-s", space.Entity.Name)
+}
+
 type AppsResponse struct {
 	NextUrl   string `json:"next_url"`
 	Resources []App  `json:"resources"`

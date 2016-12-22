@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"strings"
 
@@ -25,15 +26,16 @@ func getPossibleDomains(hostname string) []string {
 func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	log.SetFlags(0)
 
-	if args[0] != CMD {
-		return
-	}
+	flags := flag.NewFlagSet(CMD, flag.ContinueOnError)
+	target := flags.Bool("t", false, "Target the org / space containing this route")
+	flags.Parse(args[1:])
 
-	if len(args) != 2 {
+	if len(flags.Args()) != 1 {
 		log.Fatal("Please specify the domain to look up.")
 	}
 
-	hostname := args[1]
+	hostname := flags.Args()[0]
+
 	apps, err := getApps(cliConnection, hostname)
 	if err != nil {
 		log.Fatal("Error retrieving apps: ", err)
@@ -56,6 +58,14 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		}
 		log.Println(org.Entity.Name + "/" + space.Entity.Name + "/" + app.Entity.Name)
 	}
+
+	if *target {
+		_, err = apps[0].Target(cliConnection)
+		if err != nil {
+			log.Fatal("Error targeting app: ", err)
+		}
+	}
+
 }
 
 func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
@@ -76,7 +86,10 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 				Name:     CMD,
 				HelpText: "Look up the mapping of a provided route",
 				UsageDetails: plugin.Usage{
-					Usage: "\n   cf " + CMD + " <some.domain.com>",
+					Usage: "\n   cf " + CMD + " [-t] <some.domain.com>",
+					Options: map[string]string{
+						"t": "Target the org / space containing the route",
+					},
 				},
 			},
 		},
