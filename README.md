@@ -18,5 +18,5 @@ $ cf lookup-route <my.domain.com>
 Bound to:
 <org>/<space>/<app>
 $ cf lookup-route <unknown.domain.com>
-2016/12/12 20:47:10 Error retrieving apps: Route not found.
+Error retrieving apps: Route not found.
 ```

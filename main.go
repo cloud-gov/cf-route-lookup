@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -24,6 +23,8 @@ func getPossibleDomains(hostname string) []string {
 }
 
 func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
+	log.SetFlags(0)
+
 	if args[0] != CMD {
 		return
 	}
@@ -39,10 +40,10 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 
 	if len(apps) == 0 {
-		fmt.Println("Not bound to any applications.")
+		log.Println("Not bound to any applications.")
 		return
 	}
-	fmt.Println("Bound to:")
+	log.Println("Bound to:")
 
 	for _, app := range apps {
 		space, err := app.GetSpace(cliConnection)
@@ -53,7 +54,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		if err != nil {
 			log.Fatal("Error retrieving org: ", err)
 		}
-		fmt.Println(org.Entity.Name + "/" + space.Entity.Name + "/" + app.Entity.Name)
+		log.Println(org.Entity.Name + "/" + space.Entity.Name + "/" + app.Entity.Name)
 	}
 }
 
