@@ -8,7 +8,7 @@ This is a Cloud Foundry CLI plugin to find the application a given hostname/doma
 1. Run
 
     ```sh
-    cf install-plugin <path/to/cf-route-lookup_*>
+    cf install-plugin -r CF-Community route-lookup
     ```
 
 ## Usage
