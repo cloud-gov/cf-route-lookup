@@ -74,7 +74,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 			log.Fatal("Error retrieving org: ", err)
 		}
 
-		log.Println("Changed target to:", org.Entity.Name + "/" + space.Entity.Name)
+		log.Printf("Changed target to %s/%s.\n", org.Entity.Name, space.Entity.Name)
 	}
 
 }
@@ -84,7 +84,7 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 		Name: "route-lookup",
 		Version: plugin.VersionType{
 			Major: 1,
-			Minor: 0,
+			Minor: 1,
 			Build: 0,
 		},
 		MinCliVersion: plugin.VersionType{
