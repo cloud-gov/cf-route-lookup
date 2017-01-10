@@ -14,9 +14,16 @@ This is a Cloud Foundry CLI plugin to find the application a given hostname/doma
 ## Usage
 
 ```
-$ cf lookup-route <my.domain.com>
+$ cf lookup-route <my.example.com>
 Bound to:
 <org>/<space>/<app>
-$ cf lookup-route <unknown.domain.com>
+
+# use -t to target the org/space containing the route
+$ cf lookup-route -t <my.example.com>
+Bound to:
+<org>/<space>/<app>
+Changed target to: <org>/<space>
+
+$ cf lookup-route <unknown.example.com>
 Error retrieving apps: Route not found.
 ```
