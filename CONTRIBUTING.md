@@ -31,6 +31,7 @@ This will (re)install then run the plugin, all in one.
 ### Releasing
 
 1. Update `Version` in [`main.go`](main.go).
-1. Install and run [`gox`](https://github.com/mitchellh/gox).
+1. Follow the [compilation instructions](https://github.com/cloudfoundry-incubator/cli-plugin-repo#cross-compile-to-the-3-different-operating-systems).
 1. Commit, tag, and push via Git.
 1. Upload the binaries to [the new Release](https://github.com/18F/cf-route-lookup/releases).
+1. Follow the rest of the [release instructions](https://github.com/cloudfoundry-incubator/cli-plugin-repo#releasing-plugins).
