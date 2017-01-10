@@ -22,6 +22,7 @@ Bound to:
 $ cf lookup-route -t <my.example.com>
 Bound to:
 <org>/<space>/<app>
+Changed target to: <org>/<space>
 
 $ cf lookup-route <unknown.example.com>
 Error retrieving apps: Route not found.

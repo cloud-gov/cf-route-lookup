@@ -64,6 +64,17 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		if err != nil {
 			log.Fatal("Error targeting app: ", err)
 		}
+
+		space, err := apps[0].GetSpace(cliConnection)
+		if err != nil {
+			log.Fatal("Error retrieving space: ", err)
+		}
+		org, err := space.GetOrg(cliConnection)
+		if err != nil {
+			log.Fatal("Error retrieving org: ", err)
+		}
+
+		log.Println("Changed target to:", org.Entity.Name + "/" + space.Entity.Name)
 	}
 
 }
