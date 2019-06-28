@@ -28,7 +28,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	log.SetFlags(0)
 
 	if len(args) == 1 && args[0] == "CLI-MESSAGE-UNINSTALL" {
-		log.Println("Lack of features? Go to the https://github.com/18F/cf-route-lookup/issues")
+		log.Println("Lack of features? Please contribute: https://github.com/18F/cf-route-lookup/")
 		return
 	}
 
@@ -65,6 +65,7 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		return appsExt[i].route.route.SpaceGUID < appsExt[j].route.route.SpaceGUID
 	})
 
+	targets := NewTargets()
 	spaceGuid := ""
 	for _, appExt := range appsExt {
 		if appExt.app != (App{}) {
@@ -76,37 +77,31 @@ func (c *BasicPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 		if spaceGuid != appExt.route.route.SpaceGUID {
 			spaceGuid = appExt.route.route.SpaceGUID
-			org, space, err := getTargetBySpaceGuid(cliConnection, spaceGuid)
+			org, space, err := targets.GetTargetBySpaceGuid(cliConnection, spaceGuid)
 			if err != nil {
 				log.Println("Cannot find the space with GUID=" + spaceGuid)
 				return
 			}
-
 			log.Printf("\n> cf target -o %v -s %v\n", org.Entity.Name, space.Entity.Name)
 		}
+
 		if appExt.app == (App{}) {
 			log.Printf("  > # unbounded route: %v (%v)\n", appExt.route.hostname, appExt.route.route.GUID)
 		} else {
-			log.Printf("  > cf app %v # route: %v (%v)\n", appExt.app.Entity.Name, appExt.route.hostname, appExt.route.route.GUID)
+			log.Printf("  > cf app %v  # route: %v (%v)\n", appExt.app.Entity.Name, appExt.route.hostname, appExt.route.route.GUID)
 		}
 	}
 
 	if *target {
-		_, err = firstApp.Target(cliConnection)
+		firstAppOrg, firstAppSpace, err := targets.GetTargetBySpaceGuid(cliConnection, firstApp.Entity.SpaceGUID)
+		if err != nil {
+			log.Fatal("Error retrieving target: ", err)
+		}
+		log.Printf("\nChanging target to: %v ...", firstAppOrg.Entity.Name+" / "+firstAppSpace.Entity.Name)
+		_, err = cliConnection.CliCommand("target", "-o", firstAppOrg.Entity.Name, "-s", firstAppSpace.Entity.Name)
 		if err != nil {
 			log.Fatal("Error targeting app: ", err)
 		}
-
-		space, err := firstApp.GetSpace(cliConnection)
-		if err != nil {
-			log.Fatal("Error retrieving space: ", err)
-		}
-		org, err := space.GetOrg(cliConnection)
-		if err != nil {
-			log.Fatal("Error retrieving org: ", err)
-		}
-
-		log.Println("Changed target to:", org.Entity.Name+"/"+space.Entity.Name)
 	}
 
 }
@@ -127,11 +122,14 @@ func (c *BasicPlugin) GetMetadata() plugin.PluginMetadata {
 		Commands: []plugin.Command{
 			{
 				Name:     CMD,
-				HelpText: "Look up the mapping of a provided route",
+				HelpText: "Look up the mapping of a provided route." +
+					"\n   Wildcard support: '*' - any number of any characters with the exception of dots",
 				UsageDetails: plugin.Usage{
-					Usage: "\n   cf " + CMD + " [-t] <some.domain.com>",
+					Usage: "\ncf " + CMD + " [-t] some.example.com" +
+						"\ncf " + CMD + " [-t] *.example.com" +
+						"\ncf " + CMD + " [-t] *s*me*.example.com",
 					Options: map[string]string{
-						"t": "Target the org / space containing the route",
+						"t": "Target the first org / space matching the route",
 					},
 				},
 			},

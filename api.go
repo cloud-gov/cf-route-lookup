@@ -1,23 +1,39 @@
 package main
 
 import (
+	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2"
+	"code.cloudfoundry.org/cli/plugin"
 	"encoding/json"
 	"errors"
 	"net/url"
 	"regexp"
 	"strings"
-
-	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2"
-	"code.cloudfoundry.org/cli/plugin"
 )
 
+
 func apiCall(cliConnection plugin.CliConnection, path string) (body string, err error) {
+	/*
+	   [{    "description": "Unknown request",    "error_code": "CF-NotFound",    "code": 10000 }]
+	*/
+	type ErrorResponse struct {
+		Description string `json:"description"`
+		ErrorCode string `json:"error_code"`
+		Code int `json:"code"`
+	}
 	// based on https://github.com/krujos/cfcurl/blob/320854091a119f220102ba356e507c361562b221/cfcurl.go
 	bodyLines, err := cliConnection.CliCommandWithoutTerminalOutput("curl", path)
 	if err != nil {
-		return
+		return "", err
+	}
+	if nil == bodyLines || 0 == len(bodyLines) {
+		return "", errors.New("CF API returned no output")
 	}
 	body = strings.Join(bodyLines, "\n")
+	var erResp ErrorResponse
+	err = json.Unmarshal([]byte(body), &erResp)
+	if err == nil && erResp.ErrorCode!=""{
+		return "", errors.New("CF API ("+path+") returned error: ["+erResp.ErrorCode+"] "+erResp.Description)
+	}
 	return
 }
 
@@ -81,27 +97,6 @@ func getDomain(cliConnection plugin.CliConnection, hostname string) (matchingDom
 	return
 }
 
-func getTargetBySpaceGuid(cliConnection plugin.CliConnection, spaceGuid string) (org Org, space Space, err error) {
-	body, err := apiCall(cliConnection, "/v2/spaces/"+spaceGuid)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal([]byte(body), &space)
-	if err != nil {
-		return
-	}
-
-	body, err = apiCall(cliConnection, "/v2/organizations/"+space.Entity.OrgGUID)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal([]byte(body), &org)
-	if err != nil {
-		return
-	}
-	return
-}
-
 func getDomainRoutes(cliConnection plugin.CliConnection, domain ccv2.Domain) (routes []ccv2.Route, err error) {
 	// based on https://github.com/ECSTeam/buildpack-usage/blob/e2f7845f96c021fa7f59d750adfa2f02809e2839/command/buildpack_usage_cmd.go#L161-L167
 	routes = make([]ccv2.Route, 0)
@@ -137,7 +132,7 @@ func matchWildcard(wildcard string, route string) (bool, error) {
 }
 
 type RouteExt struct {
-	route    ccv2.Route
+	route ccv2.Route
 	hostname string
 }
 
@@ -173,7 +168,7 @@ func getMatchingRoutes(cliConnection plugin.CliConnection, hostname string) (mat
 
 type AppExt struct {
 	route RouteExt
-	app   App
+	app App
 }
 
 func getApps(cliConnection plugin.CliConnection, hostname string) (appsExt []AppExt, err error) {
