@@ -4,7 +4,7 @@ This is a Cloud Foundry CLI plugin to find the application a given hostname/doma
 
 ## End-of-Life
 
-This plugin is no longer supported. Equivalent functionality is provided by [CloudFoundry cf-lookup-route plugin](https://github.com/cloudfoundry/cf-lookup-route).
+This plugin is no longer supported. Equivalent functionality is provided by the [CloudFoundry cf-lookup-route plugin](https://github.com/cloudfoundry/cf-lookup-route).
 
 ## Installation
 
